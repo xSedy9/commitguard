@@ -1,12 +1,11 @@
 # install.ps1 — commitguard Windows installer
 #
 # Run this script once from the commitguard directory.
-# It prepends the current directory to the user PATH so that
-# git.cmd intercepts all git commands.
+# Prepends the directory to PATH so git.cmd intercepts all git commands.
 #
 # Usage:
 #   cd path\to\commitguard
-#   .\install.ps1
+#   powershell -ExecutionPolicy Bypass -File .\install.ps1
 
 #Requires -Version 5.1
 Set-StrictMode -Version Latest
@@ -40,24 +39,51 @@ if (-not (Test-Path $shimFile)) {
     exit 1
 }
 
-# ── 4. Read current user PATH ──────────────────────────────────────────────
-$userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
-$userPathEntries = $userPath -split ";" | Where-Object { $_ -ne "" }
+# ── 4. Check for Administrator privileges & System Git ─────────────────────
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+$machinePath = [System.Environment]::GetEnvironmentVariable("PATH", "Machine")
+$hasSystemGit = $false
+foreach ($p in ($machinePath -split ";")) {
+    if ($p -and (Test-Path (Join-Path $p "git.exe") -ErrorAction SilentlyContinue)) {
+        $hasSystemGit = $true
+        break
+    }
+}
 
-# Check if already installed
-if ($userPathEntries -contains $shimDir) {
-    Write-Host "[commitguard] Already installed (directory already in PATH)." -ForegroundColor Yellow
+if ($hasSystemGit -and -not $isAdmin) {
+    Write-Host "[commitguard] NOTICE: Real git is installed in System PATH (Machine scope)." -ForegroundColor Yellow
+    Write-Host "[commitguard] In Windows, System PATH has higher priority than User PATH." -ForegroundColor Yellow
+    Write-Host "[commitguard] To intercept 'git' globally across all terminals, IDEs, and tools," -ForegroundColor Yellow
+    Write-Host "[commitguard] commitguard must be added to System PATH (requires Administrator elevation)." -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "[commitguard] Requesting Administrator elevation..." -ForegroundColor Cyan
+    Start-Process powershell -Verb RunAs -ArgumentList "-ExecutionPolicy Bypass -File `"$PSCommandPath`""
     exit 0
 }
 
-# ── 5. Prepend shim directory to user PATH ─────────────────────────────────
-$newPath = $shimDir + ";" + $userPath
-[System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
-Write-Host "[commitguard] Prepended to User PATH: $shimDir" -ForegroundColor Green
+# ── 5. Prepend to PATH ─────────────────────────────────────────────────────
+if ($isAdmin) {
+    $machineEntries = $machinePath -split ";" | Where-Object { $_ -ne "" }
+    if ($machineEntries -notcontains $shimDir) {
+        $newMachinePath = $shimDir + ";" + $machinePath
+        [System.Environment]::SetEnvironmentVariable("PATH", $newMachinePath, "Machine")
+        Write-Host "[commitguard] Prepended to System (Machine) PATH: $shimDir" -ForegroundColor Green
+    } else {
+        Write-Host "[commitguard] Already in System PATH." -ForegroundColor Yellow
+    }
+} else {
+    $userPath = [System.Environment]::GetEnvironmentVariable("PATH", "User")
+    $userPathEntries = $userPath -split ";" | Where-Object { $_ -ne "" }
+    if ($userPathEntries -notcontains $shimDir) {
+        $newPath = $shimDir + ";" + $userPath
+        [System.Environment]::SetEnvironmentVariable("PATH", $newPath, "User")
+        Write-Host "[commitguard] Prepended to User PATH: $shimDir" -ForegroundColor Green
+    } else {
+        Write-Host "[commitguard] Already in User PATH." -ForegroundColor Yellow
+    }
+}
 
-# ── 6. Verify real git can still be found ─────────────────────────────────
-# After PATH change takes effect in a new shell, git_guard.py will
-# auto-discover the real git by scanning subsequent PATH entries.
+# ── 6. Auto-discover verification ──────────────────────────────────────────
 Write-Host "[commitguard] Real git will be auto-discovered by git_guard.py on first use."
 
 # ── 7. Optional: install pyyaml ───────────────────────────────────────────
@@ -67,14 +93,13 @@ try {
     $yamlInstalled = ""
 }
 if ($yamlInstalled -notmatch "ok") {
-    Write-Host "[commitguard] Tip: pyyaml not found. Installing it now..." -ForegroundColor Yellow
+    Write-Host "[commitguard] Installing pyyaml..." -ForegroundColor Yellow
     & python -m pip install pyyaml --quiet
-    Write-Host "[commitguard] pyyaml installed." -ForegroundColor Green
 }
 
 Write-Host ""
 Write-Host "[commitguard] Installed successfully." -ForegroundColor Green
-Write-Host "  'git' now routes through commitguard." -ForegroundColor Green
-Write-Host "  Restart your terminal for PATH changes to take effect." -ForegroundColor Yellow
+Write-Host "  'git' now routes through commitguard globally." -ForegroundColor Green
+Write-Host "  Restart your terminal / editor for PATH changes to take effect." -ForegroundColor Yellow
 Write-Host ""
 Write-Host "  To uninstall: .\uninstall.ps1"
