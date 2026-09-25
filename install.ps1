@@ -61,10 +61,15 @@ Write-Host "[commitguard] Prepended to User PATH: $shimDir" -ForegroundColor Gre
 Write-Host "[commitguard] Real git will be auto-discovered by git_guard.py on first use."
 
 # ── 7. Optional: install pyyaml ───────────────────────────────────────────
-$yamlInstalled = & python -c "import yaml; print('ok')" 2>$null
-if ($yamlInstalled -ne "ok") {
-    Write-Host "[commitguard] Tip: pyyaml is not installed. Run: pip install pyyaml" -ForegroundColor Yellow
-    Write-Host "              (Required only if you use config.yaml)" -ForegroundColor Yellow
+try {
+    $yamlInstalled = & python -c "import yaml; print('ok')" 2>&1
+} catch {
+    $yamlInstalled = ""
+}
+if ($yamlInstalled -notmatch "ok") {
+    Write-Host "[commitguard] Tip: pyyaml not found. Installing it now..." -ForegroundColor Yellow
+    & python -m pip install pyyaml --quiet
+    Write-Host "[commitguard] pyyaml installed." -ForegroundColor Green
 }
 
 Write-Host ""
