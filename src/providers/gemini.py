@@ -33,14 +33,20 @@ class GeminiProvider(AIProvider):
         self,
         model: str = _DEFAULT_MODEL,
         timeout: int = 10,
+        api_key: str | None = None,
     ) -> None:
         self.model = model
         self.timeout = timeout
+        self.api_key = api_key
         self._client = None
 
+    def _resolve_api_key(self) -> str | None:
+        """Resolve API key from constructor argument or environment variables."""
+        return self.api_key or os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+
     def is_available(self) -> bool:
-        """Return True if GOOGLE_API_KEY is present in the environment."""
-        return bool(os.environ.get("GOOGLE_API_KEY"))
+        """Return True if an API key is present in environment or config."""
+        return bool(self._resolve_api_key())
 
     def _get_client(self):
         """Lazily initialize and cache the Gemini API client."""
@@ -51,7 +57,10 @@ class GeminiProvider(AIProvider):
                 raise RuntimeError(
                     "google-genai is not installed. Run: pip install google-genai"
                 ) from exc
-            self._client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
+            key = self._resolve_api_key()
+            if not key:
+                raise RuntimeError("No Gemini API key found (set GOOGLE_API_KEY or GEMINI_API_KEY).")
+            self._client = genai.Client(api_key=key)
         return self._client
 
     def analyze(self, prompt: str) -> AIResult:

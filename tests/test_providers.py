@@ -118,10 +118,17 @@ class TestParseResponse:
 class TestGeminiProvider:
     def test_is_available_false_without_key(self, monkeypatch):
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         assert GeminiProvider().is_available() is False
 
-    def test_is_available_true_with_key(self, monkeypatch):
+    def test_is_available_true_with_google_key(self, monkeypatch):
         monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        assert GeminiProvider().is_available() is True
+
+    def test_is_available_true_with_gemini_key(self, monkeypatch):
+        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.setenv("GEMINI_API_KEY", "test-key")
         assert GeminiProvider().is_available() is True
 
     def test_analyze_calls_sdk_and_parses(self, monkeypatch):
@@ -255,6 +262,7 @@ class TestOllamaProvider:
 class TestGetProvider:
     def test_returns_none_when_no_provider_available(self, monkeypatch):
         monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
         monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
         with patch("urllib.request.urlopen", side_effect=Exception("no ollama")):

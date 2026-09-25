@@ -156,12 +156,32 @@ def _find_config_file() -> Optional[Path]:
     return candidate if candidate.exists() else None
 
 
+def _load_env_file(repo_root: Path) -> None:
+    """Load key-value pairs from .env into os.environ if not already present."""
+    env_file = repo_root / ".env"
+    if not env_file.is_file():
+        return
+    try:
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, v = line.split("=", 1)
+            k = k.strip()
+            v = v.strip().strip("'\"")
+            if k and k not in os.environ:
+                os.environ[k] = v
+    except Exception:
+        pass
+
+
 def load_config(config_path: Optional[Path] = None) -> Config:
     """
     Load and return a fully-populated Config object.
 
     Reads config.yaml if found; silently falls back to defaults when
     the file is missing, malformed, or pyyaml is not installed.
+    Also loads .env from the repo root if present.
 
     Args:
         config_path: Explicit path to a config file. Overrides autodetect.
@@ -169,6 +189,9 @@ def load_config(config_path: Optional[Path] = None) -> Config:
     Returns:
         Config populated from the file merged with built-in defaults.
     """
+    repo_root = Path(__file__).parent.parent
+    _load_env_file(repo_root)
+
     cfg = Config()
 
     path = config_path or _find_config_file()
