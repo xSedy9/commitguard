@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AIResponse",
+  "type": "object",
+  "properties": {
+    "passed": {
+      "type": "boolean",
+      "description": "True if all 5 validation rules passed, False otherwise"
+    },
+    "issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "category": {
+            "type": "string",
+            "enum": [
+              "documentation_language",
+              "documentation_emoji",
+              "debug_and_garbage_code",
+              "commit_atomicity",
+              "message_diff_match"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Brief description of the rule violation"
+          },
+          "detail": {
+            "type": "string",
+            "description": "Detailed explanation with line or code reference"
+          }
+        },
+        "required": ["category", "message", "detail"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["passed", "issues"],
+  "additionalProperties": false
+}

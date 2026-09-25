@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ValidationIssue",
+  "type": "object",
+  "properties": {
+    "kind": {
+      "type": "string",
+      "enum": ["blocked_file", "message_format", "ai"],
+      "description": "Classification category for report grouping"
+    },
+    "title": {
+      "type": "string",
+      "description": "Single-line summary displayed after the failure indicator"
+    },
+    "detail": {
+      "type": "string",
+      "description": "Multi-line explanatory guidance and resolution steps"
+    }
+  },
+  "required": ["kind", "title", "detail"],
+  "additionalProperties": false
+}

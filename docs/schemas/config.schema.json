@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CommitguardConfig",
+  "type": "object",
+  "properties": {
+    "ai": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "provider": { "type": ["string", "null"], "enum": ["gemini", "openai", "anthropic", "ollama", null] },
+        "model": { "type": ["string", "null"] },
+        "timeout_seconds": { "type": "integer", "minimum": 1, "default": 10 },
+        "max_diff_tokens": { "type": "integer", "minimum": 100, "default": 8000 }
+      },
+      "additionalProperties": false
+    },
+    "rules": {
+      "type": "object",
+      "properties": {
+        "blocked_filenames": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "blocked_path_prefixes": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "allowed_path_prefixes": { "type": "array", "items": { "type": "string" }, "default": [] }
+      },
+      "additionalProperties": false
+    },
+    "commit_message": {
+      "type": "object",
+      "properties": {
+        "max_subject_length": { "type": "integer", "minimum": 10, "default": 100 },
+        "require_scope": { "type": "boolean", "default": true },
+        "allowed_types": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
