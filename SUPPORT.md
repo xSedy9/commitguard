@@ -6,7 +6,7 @@ If you run into issues or have questions about commitguard:
 
 1. **Documentation**:
    - Check [README.md](README.md) for installation and provider configuration.
-   - Check [docs/SPECIFICATION.md](docs/SPECIFICATION.md) for full architectural details.
+   - Check [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for full architectural details.
 2. **Issues**:
    - If you encounter a bug or unexpected behavior, open an issue on GitHub with reproduction steps.
    - For security-sensitive issues, refer to [SECURITY.md](SECURITY.md).

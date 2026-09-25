@@ -2,7 +2,7 @@
 Output formatting for commitguard.
 
 All output is written to stderr to avoid interfering with git's own stdout.
-The format follows the specification in docs/SPECIFICATION.md § 4.
+The format follows the specification in docs/DATA_FORMAT.md.
 """
 from __future__ import annotations
 
