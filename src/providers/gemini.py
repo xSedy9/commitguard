@@ -9,10 +9,11 @@ from __future__ import annotations
 import json
 import os
 import re
+import warnings
 
 from src.providers.base import AIIssue, AIProvider, AIResult
 
-_DEFAULT_MODEL = "gemini-2.5-flash-lite-preview-06-17"
+_DEFAULT_MODEL = "gemini-3.5-flash-lite"
 
 # Matches a JSON object inside a fenced code block (```json ... ```)
 _FENCED_JSON_RE = re.compile(r"```(?:json)?\s*(\{.*?\})\s*```", re.DOTALL)
@@ -75,10 +76,12 @@ class GeminiProvider(AIProvider):
             Falls back to AIResult(passed=True) on any parse failure (fail-open).
         """
         client = self._get_client()
-        response = client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message=".*automatic function calling.*")
+            response = client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+            )
         return _parse_response(response.text)
 
 

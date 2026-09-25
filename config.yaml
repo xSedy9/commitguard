@@ -5,7 +5,7 @@ ai:
   enabled: true
   provider: gemini          # explicit: gemini | openai | anthropic | ollama
   #                           # omit for autodetect (first available wins)
-  model: gemini-2.5-flash-lite-preview-06-17  # override provider default
+  model: gemini-3.5-flash-lite  # override provider default
   timeout_seconds: 10         # fail-open if AI exceeds this limit
   max_diff_tokens: 8000       # truncate large diffs before sending to AI
 

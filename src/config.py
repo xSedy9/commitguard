@@ -8,6 +8,7 @@ built-in defaults are used silently.
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -157,22 +158,34 @@ def _find_config_file() -> Optional[Path]:
 
 
 def _load_env_file(repo_root: Path) -> None:
-    """Load key-value pairs from .env into os.environ if not already present."""
+    """Load key-value pairs from .env into os.environ if not already present,
+    and on Windows check User Environment registry as fallback."""
     env_file = repo_root / ".env"
-    if not env_file.is_file():
-        return
-    try:
-        for line in env_file.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if not line or line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            k = k.strip()
-            v = v.strip().strip("'\"")
-            if k and k not in os.environ:
-                os.environ[k] = v
-    except Exception:
-        pass
+    if env_file.is_file():
+        try:
+            for line in env_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'\"")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+        except Exception:
+            pass
+
+    if sys.platform == "win32":
+        for var in ("GOOGLE_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY"):
+            if var not in os.environ:
+                try:
+                    import winreg
+                    with winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Environment") as k:
+                        val, _ = winreg.QueryValueEx(k, var)
+                        if val:
+                            os.environ[var] = val
+                except Exception:
+                    pass
 
 
 def load_config(config_path: Optional[Path] = None) -> Config:
