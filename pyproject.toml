@@ -1,0 +1,24 @@
+[project]
+name = "commitguard"
+version = "0.1.0"
+description = "Git wrapper with two-layer commit validation for agentic development environments"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+gemini = ["google-genai"]
+openai = ["openai"]
+anthropic = ["anthropic"]
+yaml = ["pyyaml"]
+dev = ["pytest", "pytest-mock", "ruff"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]

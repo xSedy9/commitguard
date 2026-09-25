@@ -1,0 +1,15 @@
+# commitguard — Python dependencies
+#
+# Core (required)
+pyyaml          # optional but strongly recommended for config.yaml support
+#
+# AI provider SDKs — install only the one you use
+# google-genai    # Gemini:    pip install google-genai
+# openai          # OpenAI:    pip install openai
+# anthropic       # Claude:    pip install anthropic
+# (Ollama uses stdlib urllib — no SDK needed)
+#
+# Development
+pytest
+pytest-mock
+ruff

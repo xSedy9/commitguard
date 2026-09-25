@@ -1,0 +1,1 @@
+"""commitguard — internal source package."""
