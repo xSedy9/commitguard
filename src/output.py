@@ -10,9 +10,37 @@ import sys
 from typing import TextIO
 
 
+try:
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(errors="replace")
+except Exception:
+    pass
+
+
+def _format_for_stream(message: str, stream: TextIO) -> str:
+    """Replace unicode symbols with clean ASCII alternatives if stream cannot encode them."""
+    encoding = getattr(stream, "encoding", None) or "utf-8"
+    try:
+        message.encode(encoding)
+        return message
+    except (UnicodeEncodeError, LookupError):
+        return (
+            message.replace("\u2717", "[X]")
+            .replace("\u2713", "[OK]")
+            .replace("\u26a0", "[!]")
+            .replace("\u2192", "->")
+            .replace("\u2014", "--")
+        )
+
+
 def _write(message: str, file: TextIO | None = None) -> None:
-    """Write a single line to the output stream (default: sys.stderr)."""
-    print(message, file=file if file is not None else sys.stderr)
+    """Write a single line to the output stream (default: sys.stderr) with safe encoding."""
+    target = file if file is not None else sys.stderr
+    formatted = _format_for_stream(message, target)
+    try:
+        print(formatted, file=target)
+    except UnicodeEncodeError:
+        print(formatted.encode("ascii", errors="replace").decode("ascii"), file=target)
 
 
 def warn(message: str) -> None:
