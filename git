@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# git — commitguard Unix/macOS PATH shim
+#
+# Placed at the beginning of the user PATH so the shell resolves 'git'
+# to this script before finding the real git binary.
+#
+# All git commands are forwarded to git_guard.py which handles
+# validation for 'git commit' and transparent passthrough for everything else.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$SCRIPT_DIR/git_guard.py" "$@"
