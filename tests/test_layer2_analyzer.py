@@ -56,7 +56,8 @@ class TestBuildPrompt:
 
     def test_prompt_contains_all_four_check_categories(self):
         prompt = build_prompt("feat(x): y", [], "")
-        for category in ("language", "debug_code", "atomicity", "mismatch"):
+        for category in ("documentation_language", "documentation_emoji",
+                         "debug_and_garbage_code", "commit_atomicity", "message_diff_match"):
             assert category in prompt
 
 
@@ -150,7 +151,7 @@ class TestRunAnalysis:
 
         run_analysis(provider, "feat(x): y", [], big_diff, cfg)
         prompt_sent = provider.analyze.call_args[0][0]
-        assert "truncated" in prompt_sent
+        assert "CLIPPED" in prompt_sent
 
 
 # ── output formatting ─────────────────────────────────────────────────────────

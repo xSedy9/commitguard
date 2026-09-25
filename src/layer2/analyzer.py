@@ -16,66 +16,121 @@ from src.providers.base import AIProvider, AIResult
 # ── Prompt ────────────────────────────────────────────────────────────────────
 
 _PROMPT_TEMPLATE = textwrap.dedent("""\
-    You are a strict code-review assistant validating a git commit.
-    Analyze the following commit and return ONLY a valid JSON object.
-    Do NOT include any prose, markdown formatting, or explanation outside the JSON.
+    You are a strict automated gate that validates git commits before they enter history.
+    Your job is to enforce the project rules exactly as written below.
+    Return ONLY a JSON object — no prose, no markdown, no explanation outside the JSON.
 
-    ## Commit Message
+    ═══════════════════════════════════════════════════════
+    COMMIT UNDER REVIEW
+    ═══════════════════════════════════════════════════════
+
+    Commit message:
     {commit_message}
 
-    ## Staged Files
+    Staged files:
     {staged_files}
 
-    ## Diff (may be truncated)
+    Diff (may be clipped at token limit):
     ```
     {diff}
     ```
 
-    ## Your Task
-    Check all four categories. For each failed check add one entry to "issues".
+    ═══════════════════════════════════════════════════════
+    RULES — check every one, reject on ANY violation
+    ═══════════════════════════════════════════════════════
 
-    1. **language** — All human-readable prose in staged .md/.rst/.txt files must
-       be in English. Ignore code snippets, URLs, variable names, technical terms.
-       Block if more than 10% of prose content is non-English.
+    RULE 1 · documentation_language
+    ─────────────────────────────────
+    All human-readable prose inside staged .md, .rst, and .txt files MUST be in English.
+    Exclusions (do NOT flag these): code blocks, inline code, URLs, file paths,
+    variable/function names, technical identifiers, proper nouns.
+    BLOCK if: more than 10 % of the prose sentences are in a non-English language.
+    Examples of violations:
+      • A Russian paragraph in a README.md
+      • French instructions in a CONTRIBUTING.md
+      • Mixed-language changelog entries
 
-    2. **debug_code** — Look for signs of temporary or diagnostic code:
-       - Debug print statements (print("DEBUG:…"), console.log, fmt.Println("test"))
-       - Hardcoded temporary values (url = "http://localhost:3000", TOKEN = "abc123")
-       - Commented-out code blocks (3+ consecutive commented-out lines of real code)
-       - Developer annotations (# TODO: remove, # FIXME: hack, # TEMP)
-       - Diagnostic-only conditionals (if DEBUG:, if os.environ.get("DEV")) with no
-         production fallback
+    RULE 2 · documentation_emoji
+    ─────────────────────────────────
+    Staged .md, .rst, and .txt files MUST NOT contain emoji characters anywhere
+    in their prose content (section headings, paragraphs, bullet points, table cells).
+    Emoji in code blocks are allowed.
+    BLOCK if: any emoji character appears outside a code block in a documentation file.
+    Examples of violations:
+      • "## ✨ Features" heading
+      • "- 🐛 Fixed login bug" bullet point
+      • Table cell containing 🚀
 
-    3. **atomicity** — The diff must represent exactly one logical change.
-       Block if it mixes two or more unrelated domains, e.g.:
-       - Business logic changes + dependency upgrades
-       - UI changes + database schema changes
-       - New feature + unrelated bug fix
-       Allow: related changes that logically belong together (new function + its test).
+    RULE 3 · debug_and_garbage_code
+    ─────────────────────────────────
+    The staged diff MUST NOT introduce temporary, diagnostic, or intermediate code.
+    BLOCK if any of the following appear in the added lines (+):
+      a) Debug output statements:
+           print("DEBUG: …"), console.log("here"), fmt.Println("test"), log.debug("…")
+      b) Hardcoded local/temporary values:
+           url = "http://localhost:3000", TOKEN = "hardcoded_secret", API_KEY = "abc123"
+      c) Commented-out code blocks:
+           3 or more consecutive commented-out lines that look like real code (not docs)
+      d) Explicit temporary annotations:
+           # TODO: remove, # FIXME: remove this, # TEMP, # HACK, // TEMP:
+           (annotations marking code as "remove before commit")
+      e) Diagnostic-only conditionals without a production path:
+           if DEBUG:, if os.environ.get("DEV_MODE"):  — with no else branch
 
-    4. **mismatch** — The commit message must accurately describe the diff.
-       Block if:
-       - The message describes something different from what the diff actually does
-       - The message is generic (chore(misc): updates, fix(core): fix things)
-       - The message scope doesn't match the changed files
+    RULE 4 · commit_atomicity
+    ─────────────────────────────────
+    The diff MUST represent exactly ONE logical change.
+    BLOCK if the diff mixes two or more unrelated concerns, for example:
+      • Business logic change + dependency version bump
+      • UI layout change + database schema migration
+      • New feature code + unrelated bug fix in another module
+      • Refactoring in one module + new functionality in another
+    ALLOW: changes that logically belong to the same unit of work:
+      • A new function + its unit test
+      • A bug fix + the regression test for it
+      • A feature + its documentation update
 
-    ## Response Format (strict JSON only, nothing else outside)
+    RULE 5 · message_diff_match
+    ─────────────────────────────────
+    The commit message MUST accurately and specifically describe what the diff does.
+    BLOCK if:
+      • The message type is wrong (e.g. "feat" but the diff only modifies existing logic)
+      • The scope does not match the files changed (e.g. scope "ui" but only backend files)
+      • The subject is vague or generic:
+          chore(misc): updates
+          fix(core): fix things
+          feat(ui): changes
+      • The message claims one thing but the diff does another
+
+    ═══════════════════════════════════════════════════════
+    OUTPUT FORMAT
+    ═══════════════════════════════════════════════════════
+
+    If ALL rules pass:
     {{
       "passed": true,
       "issues": []
     }}
 
-    Or if problems are found:
+    If ANY rule fails (include one entry per violated rule):
     {{
       "passed": false,
       "issues": [
         {{
-          "category": "debug_code",
-          "message": "Debug code detected",
-          "detail": "Line 47 in auth.py: print(\\"DEBUG token:\\", token)\\nRemove or replace with proper logging"
+          "category": "documentation_language",
+          "message": "Non-English prose detected in README.md",
+          "detail": "Found Russian text in lines 12-18. All documentation prose must be in English."
+        }},
+        {{
+          "category": "debug_and_garbage_code",
+          "message": "Debug print statement detected",
+          "detail": "auth.py line 47: print(\\"DEBUG token:\\", token) — remove or replace with proper logging."
         }}
       ]
     }}
+
+    Valid category values: documentation_language, documentation_emoji,
+                           debug_and_garbage_code, commit_atomicity, message_diff_match
 """)
 
 
