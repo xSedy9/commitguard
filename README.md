@@ -34,10 +34,11 @@ Powered by any supported LLM (pluggable provider interface):
 
 | Check | What is flagged |
 |---|---|
-| **language** | Non-English prose in `.md`/`.rst`/`.txt` files (>10%) |
-| **debug_code** | Debug prints, hardcoded localhost/tokens, TODO/FIXME |
-| **atomicity** | Diff mixes two+ unrelated domains |
-| **mismatch** | Commit message doesn't describe the diff |
+| **documentation_language** | Non-English prose in `.md`/`.rst`/`.txt` files (>10%) |
+| **documentation_emoji** | Emoji in documentation headings, paragraphs, bullet points, tables |
+| **debug_and_garbage_code** | Debug prints, hardcoded localhost/tokens, commented-out blocks, TODO/FIXME/TEMP |
+| **commit_atomicity** | Diff mixes two+ unrelated domains/changes |
+| **message_diff_match** | Commit message doesn't describe the diff or scope/type mismatch |
 
 Layer 2 is skipped when no provider is configured, on timeout (fail-open),
 or via `--commitguard-no-ai` (CI escape hatch).
@@ -48,9 +49,11 @@ or via `--commitguard-no-ai` (CI escape hatch).
 
 ### Windows
 
+Run from PowerShell (use `-ExecutionPolicy Bypass` if unsigned scripts are restricted on your system):
+
 ```powershell
 cd path\to\commitguard
-.\install.ps1
+powershell -ExecutionPolicy Bypass -File .\install.ps1
 # Restart your terminal
 ```
 
