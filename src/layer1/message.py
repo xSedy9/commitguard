@@ -34,6 +34,26 @@ _EMOJI_RE = re.compile(
     flags=re.UNICODE,
 )
 
+# Detects internal agent/issue task tracking references: task 11, step 3, ticket #42, etc.
+_TASK_REF_RE = re.compile(
+    r"\b(?:task|step|ticket|issue|todo)\s*#?\d+\b",
+    re.IGNORECASE,
+)
+
+# Detects vague, generic, or meaningless subjects that explain nothing about the code
+_VAGUE_SUBJECT_RE = re.compile(
+    r"^(?:"
+    r"wip|"
+    r"temp|"
+    r"work\s+in\s+progress|"
+    r"various\s+(?:fixes|changes|updates)|"
+    r"(?:small|minor|quick)\s+(?:fixes?|changes?|updates?)|"
+    r"(?:do|did|finish|finished|complete|completed|implement|implemented)\s+(?:task|todo|work|things|stuff)|"
+    r"(?:update|updates|fix|fixes|changes?|cleanup|clean\s*up|refactor|test|misc)"
+    r")$",
+    re.IGNORECASE,
+)
+
 
 def _has_emoji(text: str) -> bool:
     """Return True if text contains at least one emoji character."""
@@ -127,6 +147,34 @@ def validate_message(message: str, config: Config) -> list[dict]:
                 "kind": "message_format",
                 "title": f"Subject too long ({len(subject_text)} chars, max {max_len})",
                 "detail": f"Shorten the subject to at most {max_len} characters.",
+            }
+        )
+
+    # 6. Task/ticket reference check (e.g. "task 11", "step 2", "ticket #42")
+    if _TASK_REF_RE.search(subject_text):
+        issues.append(
+            {
+                "kind": "message_format",
+                "title": f"Task reference in subject: '{subject_text}'",
+                "detail": (
+                    "Commit message must describe the concrete code change, not agent tasks or ticket numbers.\n"
+                    "    Forbidden: 'do task 11', 'task 3', 'step 2'\n"
+                    "    Allowed example: feat(core): implement payment webhook signature verification"
+                ),
+            }
+        )
+
+    # 7. Vague / generic subject check (e.g. "wip", "updates", "fixes", "clean up")
+    if _VAGUE_SUBJECT_RE.match(subject_text.strip()):
+        issues.append(
+            {
+                "kind": "message_format",
+                "title": f"Vague commit subject: '{subject_text}'",
+                "detail": (
+                    "Commit subject is too generic. Describe the specific functional change.\n"
+                    "    Forbidden: 'updates', 'fixes', 'wip', 'do task'\n"
+                    "    Allowed example: fix(auth): prevent session timeout during file upload"
+                ),
             }
         )
 

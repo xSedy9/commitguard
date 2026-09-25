@@ -94,12 +94,16 @@ _PROMPT_TEMPLATE = textwrap.dedent("""\
     ─────────────────────────────────
     The commit message MUST accurately and specifically describe what the diff does.
     BLOCK if:
+      • The message refers to internal task numbers, ticket IDs, or agent workflow steps
+        (e.g. 'do task 11', 'task 3 completed', 'implement step 2', 'ticket #42')
+        instead of describing the actual functional code modification.
       • The message type is wrong (e.g. "feat" but the diff only modifies existing logic)
       • The scope does not match the files changed (e.g. scope "ui" but only backend files)
-      • The subject is vague or generic:
+      • The subject is vague, generic, or non-descriptive:
           chore(misc): updates
           fix(core): fix things
           feat(ui): changes
+          feat(core): do task 11
       • The message claims one thing but the diff does another
 
     ═══════════════════════════════════════════════════════

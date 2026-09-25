@@ -144,3 +144,47 @@ class TestEdgeCases:
     def test_no_verify_does_not_appear_in_message(self, default_config):
         # --no-verify is stripped before this is called, but let's be safe
         assert validate_message("chore(ci): update workflow config", default_config) == []
+
+
+class TestTaskReferenceRejection:
+    """Commit subjects referencing task numbers or workflow steps must be rejected."""
+
+    @pytest.mark.parametrize(
+        "msg",
+        [
+            "feat(core): do task 11",
+            "fix(api): task 3",
+            "chore(db): step 2 setup database",
+            "refactor(auth): finish task 4",
+            "feat(ui): implement task #105",
+            "fix(core): resolve ticket 42",
+            "docs(guide): todo 1",
+        ],
+    )
+    def test_task_references_blocked(self, msg, default_config):
+        issues = validate_message(msg, default_config)
+        task_issues = [i for i in issues if "task reference" in i["title"].lower()]
+        assert len(task_issues) >= 1, f"Expected task reference error for: {msg!r}"
+
+
+class TestVagueSubjectRejection:
+    """Generic/meaningless commit subjects must be rejected."""
+
+    @pytest.mark.parametrize(
+        "msg",
+        [
+            "feat(core): wip",
+            "fix(ui): temp",
+            "chore(deps): updates",
+            "fix(core): fixes",
+            "style(ui): cleanup",
+            "refactor(auth): clean up",
+            "feat(core): various changes",
+            "fix(core): small fixes",
+            "feat(core): do task",
+        ],
+    )
+    def test_vague_subjects_blocked(self, msg, default_config):
+        issues = validate_message(msg, default_config)
+        vague_issues = [i for i in issues if "vague" in i["title"].lower()]
+        assert len(vague_issues) >= 1, f"Expected vague subject error for: {msg!r}"
