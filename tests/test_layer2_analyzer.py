@@ -54,11 +54,44 @@ class TestBuildPrompt:
         prompt = build_prompt("feat(x): y", ["a.py"], "")
         assert "(empty diff)" in prompt
 
-    def test_prompt_contains_all_four_check_categories(self):
+    def test_prompt_contains_all_standard_categories(self):
         prompt = build_prompt("feat(x): y", [], "")
         for category in ("documentation_language", "documentation_emoji",
-                         "debug_and_garbage_code", "commit_atomicity", "message_diff_match"):
+                         "debug_and_garbage_code", "commit_atomicity", "message_diff_match",
+                         "file_restrictions"):
             assert category in prompt
+
+    def test_prompt_with_custom_rules(self):
+        cfg = Config()
+        cfg.ai.custom_rules = [
+            "All public APIs must have type signatures",
+            "No raw SQL queries without parameterized inputs",
+        ]
+        prompt = build_prompt("feat(api): add endpoint", ["src/api.py"], "+code", config=cfg)
+        assert "custom_rule" in prompt
+        assert "All public APIs must have type signatures" in prompt
+        assert "No raw SQL queries without parameterized inputs" in prompt
+
+    def test_prompt_with_disabled_checks(self):
+        cfg = Config()
+        cfg.ai.checks.documentation_emoji = False
+        cfg.ai.checks.debug_and_garbage_code = False
+        prompt = build_prompt("feat(x): y", [], "", config=cfg)
+        assert "documentation_emoji" not in prompt
+        assert "debug_and_garbage_code" not in prompt
+        assert "documentation_language" in prompt
+        assert "commit_atomicity" in prompt
+        assert "message_diff_match" in prompt
+
+    def test_prompt_custom_commit_conventions(self):
+        cfg = Config()
+        cfg.commit_message.allowed_types = ["feat", "fix"]
+        cfg.commit_message.require_scope = False
+        cfg.commit_message.max_subject_length = 50
+        prompt = build_prompt("feat: test", [], "", config=cfg)
+        assert "feat, fix" in prompt
+        assert "Scope is optional" in prompt
+        assert "50 characters" in prompt
 
 
 # ── should_skip_ai ────────────────────────────────────────────────────────────
@@ -96,6 +129,34 @@ class TestShouldSkipAI:
 
     def test_case_insensitive_extension_check(self):
         assert should_skip_ai(["README.MD"], "x\n" * 5) is False
+
+    def test_no_skip_when_custom_rules_present(self):
+        cfg = Config()
+        cfg.ai.custom_rules = ["Enforce type annotations"]
+        # Even with no docs and 5-line diff, custom rules require AI evaluation
+        assert should_skip_ai(["src/main.py"], "x\n" * 5, config=cfg) is False
+
+    def test_skip_when_all_checks_disabled_and_no_custom_rules(self):
+        cfg = Config()
+        cfg.ai.checks.documentation_language = False
+        cfg.ai.checks.documentation_emoji = False
+        cfg.ai.checks.debug_and_garbage_code = False
+        cfg.ai.checks.commit_atomicity = False
+        cfg.ai.checks.message_diff_match = False
+        cfg.ai.custom_rules = []
+        # When all AI checks are disabled and no custom rules, skip AI
+        assert should_skip_ai(["README.md"], "x\n" * 100, config=cfg) is True
+
+    def test_skip_when_docs_staged_but_doc_checks_disabled_and_small_diff(self):
+        cfg = Config()
+        cfg.ai.checks.documentation_language = False
+        cfg.ai.checks.documentation_emoji = False
+        # Docs staged, but doc checks are disabled and diff is small (<50)
+        assert should_skip_ai(["README.md"], "x\n" * 10, config=cfg) is True
+
+    def test_positional_bool_backward_compat(self):
+        # should_skip_ai(staged_files, diff, True)
+        assert should_skip_ai(["README.md"], "x\n" * 10, True) is True
 
 
 # ── run_analysis ──────────────────────────────────────────────────────────────

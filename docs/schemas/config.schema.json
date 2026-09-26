@@ -10,7 +10,23 @@
         "provider": { "type": ["string", "null"], "enum": ["gemini", "openai", "anthropic", "ollama", null] },
         "model": { "type": ["string", "null"] },
         "timeout_seconds": { "type": "integer", "minimum": 1, "default": 10 },
-        "max_diff_tokens": { "type": "integer", "minimum": 100, "default": 8000 }
+        "max_diff_tokens": { "type": "integer", "minimum": 100, "default": 8000 },
+        "checks": {
+          "type": "object",
+          "properties": {
+            "documentation_language": { "type": "boolean", "default": true },
+            "documentation_emoji": { "type": "boolean", "default": true },
+            "debug_and_garbage_code": { "type": "boolean", "default": true },
+            "commit_atomicity": { "type": "boolean", "default": true },
+            "message_diff_match": { "type": "boolean", "default": true }
+          },
+          "additionalProperties": false
+        },
+        "custom_rules": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        }
       },
       "additionalProperties": false
     },
@@ -19,7 +35,8 @@
       "properties": {
         "blocked_filenames": { "type": "array", "items": { "type": "string" }, "default": [] },
         "blocked_path_prefixes": { "type": "array", "items": { "type": "string" }, "default": [] },
-        "allowed_path_prefixes": { "type": "array", "items": { "type": "string" }, "default": [] }
+        "allowed_path_prefixes": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "custom_rules": { "type": "array", "items": { "type": "string" }, "default": [] }
       },
       "additionalProperties": false
     },

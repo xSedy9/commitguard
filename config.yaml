@@ -4,10 +4,24 @@
 ai:
   enabled: true
   provider: gemini          # explicit: gemini | openai | anthropic | ollama
-  #                           # omit for autodetect (first available wins)
+                            # omit for autodetect (first available in credentials wins)
   model: gemini-3.5-flash-lite  # override provider default
   timeout_seconds: 10         # fail-open if AI exceeds this limit
   max_diff_tokens: 8000       # truncate large diffs before sending to AI
+
+  # Toggle individual semantic checks performed by the AI
+  checks:
+    documentation_language: true  # English only in .md, .rst, .txt
+    documentation_emoji: true     # No emoji in documentation prose
+    debug_and_garbage_code: true  # No debug prints, hardcoded secrets, TODO remove
+    commit_atomicity: true        # Exactly one logical unit of work per commit
+    message_diff_match: true      # Commit message accurately reflects diff
+
+  # Custom project rules described in natural language
+  custom_rules: []
+    # - "All public functions must have docstrings"
+    # - "No raw SQL queries without parameter binding"
+    # - "Migrations must include backwards-compatible down-methods"
 
 rules:
   blocked_filenames: []       # extra exact filenames to block (case-insensitive)

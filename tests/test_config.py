@@ -35,6 +35,12 @@ class TestDefaults:
         assert cfg.ai.model is None
         assert cfg.ai.timeout_seconds == 10
         assert cfg.ai.max_diff_tokens == 8000
+        assert cfg.ai.checks.documentation_language is True
+        assert cfg.ai.checks.documentation_emoji is True
+        assert cfg.ai.checks.debug_and_garbage_code is True
+        assert cfg.ai.checks.commit_atomicity is True
+        assert cfg.ai.checks.message_diff_match is True
+        assert cfg.ai.custom_rules == []
 
     def test_rules_defaults(self):
         cfg = load_config(config_path=Path("/nonexistent"))
@@ -112,6 +118,53 @@ class TestYamlLoading:
         cfg = load_config(config_path=cfg_file)
         assert isinstance(cfg, Config)
         assert cfg.ai.enabled is True
+
+    def test_yaml_checks_override(self, tmp_path: Path):
+        yaml_content = textwrap.dedent("""\
+            ai:
+              checks:
+                documentation_emoji: false
+                debug_and_garbage_code: false
+        """)
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text(yaml_content)
+        cfg = load_config(config_path=cfg_file)
+
+        assert cfg.ai.checks.documentation_emoji is False
+        assert cfg.ai.checks.debug_and_garbage_code is False
+        assert cfg.ai.checks.documentation_language is True
+        assert cfg.ai.checks.commit_atomicity is True
+        assert cfg.ai.checks.message_diff_match is True
+
+    def test_yaml_custom_rules_ai_section(self, tmp_path: Path):
+        yaml_content = textwrap.dedent("""\
+            ai:
+              custom_rules:
+                - "Public functions must have type hints"
+                - "No raw SQL queries without parameters"
+        """)
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text(yaml_content)
+        cfg = load_config(config_path=cfg_file)
+
+        assert cfg.ai.custom_rules == [
+            "Public functions must have type hints",
+            "No raw SQL queries without parameters",
+        ]
+
+    def test_yaml_custom_rules_fallback_from_rules_section(self, tmp_path: Path):
+        yaml_content = textwrap.dedent("""\
+            rules:
+              custom_rules:
+                - "Fallback rule under rules section"
+        """)
+        cfg_file = tmp_path / "config.yaml"
+        cfg_file.write_text(yaml_content)
+        cfg = load_config(config_path=cfg_file)
+
+        assert cfg.ai.custom_rules == [
+            "Fallback rule under rules section",
+        ]
 
 
 class TestBuiltinConstants:

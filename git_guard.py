@@ -274,7 +274,7 @@ def run(argv: list[str]) -> int:
 
     diff = get_staged_diff()
 
-    if should_skip_ai(staged_files, diff, skip_ai_flag=no_ai):
+    if should_skip_ai(staged_files, diff, config=config, skip_ai_flag=no_ai):
         success("heuristics only — fast-path (no docs, small diff)")
         return passthrough(["commit", *commit_args])
 

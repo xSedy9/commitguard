@@ -19,7 +19,9 @@
               "documentation_emoji",
               "debug_and_garbage_code",
               "commit_atomicity",
-              "message_diff_match"
+              "message_diff_match",
+              "file_restrictions",
+              "custom_rule"
             ]
           },
           "message": {

@@ -69,6 +69,26 @@ DEFAULT_ALLOWED_TYPES: tuple[str, ...] = (
 
 
 @dataclass
+class AIChecksConfig:
+    """Toggle individual AI semantic validation checks."""
+
+    documentation_language: bool = True
+    """Whether to enforce English documentation prose."""
+
+    documentation_emoji: bool = True
+    """Whether to reject emoji characters in documentation prose."""
+
+    debug_and_garbage_code: bool = True
+    """Whether to detect debug output statements, hardcoded secrets, and temporary code."""
+
+    commit_atomicity: bool = True
+    """Whether to enforce single-responsibility / atomicity of commits."""
+
+    message_diff_match: bool = True
+    """Whether to ensure the commit message accurately reflects the diff content."""
+
+
+@dataclass
 class AIConfig:
     """AI layer (Layer 2) settings."""
 
@@ -77,7 +97,7 @@ class AIConfig:
 
     provider: Optional[str] = None
     """Explicit provider name ('gemini', 'openai', 'anthropic', 'ollama').
-    None = autodetect from environment."""
+    None = autodetect from credentials file."""
 
     model: Optional[str] = None
     """Override the provider's default model identifier. None = provider default."""
@@ -87,6 +107,12 @@ class AIConfig:
 
     max_diff_tokens: int = 8000
     """Approximate token budget for the diff sent to the AI."""
+
+    checks: AIChecksConfig = field(default_factory=AIChecksConfig)
+    """Toggles for individual semantic checks."""
+
+    custom_rules: list[str] = field(default_factory=list)
+    """Project-specific custom rules in natural language enforced by the AI."""
 
 
 @dataclass
@@ -188,12 +214,27 @@ def load_config(config_path: Optional[Path] = None) -> Config:
         return cfg  # malformed YAML — silent fallback
 
     ai_raw = data.get("ai", {}) or {}
+    checks_raw = ai_raw.get("checks", {}) or {}
+    checks = AIChecksConfig(
+        documentation_language=bool(checks_raw.get("documentation_language", True)),
+        documentation_emoji=bool(checks_raw.get("documentation_emoji", True)),
+        debug_and_garbage_code=bool(checks_raw.get("debug_and_garbage_code", True)),
+        commit_atomicity=bool(checks_raw.get("commit_atomicity", True)),
+        message_diff_match=bool(checks_raw.get("message_diff_match", True)),
+    )
+
+    custom_rules = list(ai_raw.get("custom_rules", []))
+    if not custom_rules and "custom_rules" in (data.get("rules") or {}):
+        custom_rules = list(data["rules"]["custom_rules"])
+
     cfg.ai = AIConfig(
         enabled=ai_raw.get("enabled", True),
         provider=ai_raw.get("provider", None),
         model=ai_raw.get("model", None),
         timeout_seconds=int(ai_raw.get("timeout_seconds", 10)),
         max_diff_tokens=int(ai_raw.get("max_diff_tokens", 8000)),
+        checks=checks,
+        custom_rules=custom_rules,
     )
 
     rules_raw = data.get("rules", {}) or {}
