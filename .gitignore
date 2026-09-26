@@ -29,3 +29,10 @@ env/
 *~
 .DS_Store
 Thumbs.db
+
+# commitguard credentials & agent artifacts
+.commitguard/
+credentials
+.gemini/
+.antigravity/
+
