@@ -4,7 +4,7 @@
 - **Class**: `GeminiProvider` (`src/providers/gemini.py`)
 - **Default Model**: `gemini-3.5-flash-lite`
 - **SDK**: `google-genai` (PyPI)
-- **Credential Variables**: `GOOGLE_API_KEY` or `GEMINI_API_KEY`
+- **Credential Storage**: `~/.commitguard/credentials` (`git auth set gemini <key>`)
 
 ---
 

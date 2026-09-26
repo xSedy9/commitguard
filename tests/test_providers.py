@@ -117,23 +117,18 @@ class TestParseResponse:
 
 class TestGeminiProvider:
     def test_is_available_false_without_key(self, monkeypatch):
-        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
-        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+        monkeypatch.setattr("src.providers.gemini.get_credential", lambda p: None)
         assert GeminiProvider().is_available() is False
 
-    def test_is_available_true_with_google_key(self, monkeypatch):
-        monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
-        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    def test_is_available_true_with_credential(self, monkeypatch):
+        monkeypatch.setattr("src.providers.gemini.get_credential", lambda p: "test-key")
         assert GeminiProvider().is_available() is True
 
-    def test_is_available_true_with_gemini_key(self, monkeypatch):
-        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
-        monkeypatch.setenv("GEMINI_API_KEY", "test-key")
-        assert GeminiProvider().is_available() is True
+    def test_is_available_true_with_constructor_key(self):
+        assert GeminiProvider(api_key="explicit-key").is_available() is True
 
-    def test_analyze_calls_sdk_and_parses(self, monkeypatch):
-        monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
-        provider = GeminiProvider()
+    def test_analyze_calls_sdk_and_parses(self):
+        provider = GeminiProvider(api_key="test-key")
 
         mock_response = MagicMock()
         mock_response.text = _ok_json()
@@ -145,9 +140,8 @@ class TestGeminiProvider:
         assert result.passed is True
         mock_client.models.generate_content.assert_called_once()
 
-    def test_get_client_raises_on_missing_sdk(self, monkeypatch):
-        monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
-        provider = GeminiProvider()
+    def test_get_client_raises_on_missing_sdk(self):
+        provider = GeminiProvider(api_key="test-key")
         with patch.dict("sys.modules", {"google.genai": None}):
             with pytest.raises(RuntimeError, match="google-genai"):
                 provider._get_client()
@@ -160,16 +154,18 @@ class TestGeminiProvider:
 
 class TestOpenAIProvider:
     def test_is_available_false_without_key(self, monkeypatch):
-        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+        monkeypatch.setattr("src.providers.openai.get_credential", lambda p: None)
         assert OpenAIProvider().is_available() is False
 
-    def test_is_available_true_with_key(self, monkeypatch):
-        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    def test_is_available_true_with_credential(self, monkeypatch):
+        monkeypatch.setattr("src.providers.openai.get_credential", lambda p: "sk-test")
         assert OpenAIProvider().is_available() is True
 
-    def test_analyze_calls_sdk_and_parses(self, monkeypatch):
-        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
-        provider = OpenAIProvider()
+    def test_is_available_true_with_constructor_key(self):
+        assert OpenAIProvider(api_key="sk-explicit").is_available() is True
+
+    def test_analyze_calls_sdk_and_parses(self):
+        provider = OpenAIProvider(api_key="sk-test")
 
         mock_msg = MagicMock()
         mock_msg.content = _ok_json()
@@ -192,16 +188,18 @@ class TestOpenAIProvider:
 
 class TestAnthropicProvider:
     def test_is_available_false_without_key(self, monkeypatch):
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setattr("src.providers.anthropic.get_credential", lambda p: None)
         assert AnthropicProvider().is_available() is False
 
-    def test_is_available_true_with_key(self, monkeypatch):
-        monkeypatch.setenv("ANTHROPIC_API_KEY", "ant-test")
+    def test_is_available_true_with_credential(self, monkeypatch):
+        monkeypatch.setattr("src.providers.anthropic.get_credential", lambda p: "ant-test")
         assert AnthropicProvider().is_available() is True
 
-    def test_analyze_calls_sdk_and_parses(self, monkeypatch):
-        monkeypatch.setenv("ANTHROPIC_API_KEY", "ant-test")
-        provider = AnthropicProvider()
+    def test_is_available_true_with_constructor_key(self):
+        assert AnthropicProvider(api_key="ant-explicit").is_available() is True
+
+    def test_analyze_calls_sdk_and_parses(self):
+        provider = AnthropicProvider(api_key="ant-test")
 
         mock_content_block = MagicMock()
         mock_content_block.text = _ok_json()
@@ -261,23 +259,18 @@ class TestOllamaProvider:
 
 class TestGetProvider:
     def test_returns_none_when_no_provider_available(self, monkeypatch):
-        monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
-        monkeypatch.delenv("GEMINI_API_KEY", raising=False)
-        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setattr("src.credentials.load_credentials", lambda: {})
         with patch("urllib.request.urlopen", side_effect=Exception("no ollama")):
             result = get_provider()
         assert result is None
 
     def test_returns_gemini_when_key_set(self, monkeypatch):
-        monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
-        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-        monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+        monkeypatch.setattr("src.credentials.load_credentials", lambda: {"gemini": "test-key"})
         provider = get_provider()
         assert isinstance(provider, GeminiProvider)
 
     def test_explicit_name_overrides_autodetect(self, monkeypatch):
-        monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+        monkeypatch.setattr("src.credentials.load_credentials", lambda: {"openai": "sk-test"})
         provider = get_provider(provider_name="openai")
         assert isinstance(provider, OpenAIProvider)
 

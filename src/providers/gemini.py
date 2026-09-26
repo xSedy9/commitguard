@@ -11,6 +11,7 @@ import os
 import re
 import warnings
 
+from src.credentials import get_credential
 from src.providers.base import AIIssue, AIProvider, AIResult
 
 _DEFAULT_MODEL = "gemini-3.5-flash-lite"
@@ -42,11 +43,11 @@ class GeminiProvider(AIProvider):
         self._client = None
 
     def _resolve_api_key(self) -> str | None:
-        """Resolve API key from constructor argument or environment variables."""
-        return self.api_key or os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")
+        """Resolve API key from constructor argument or credentials file."""
+        return self.api_key or get_credential("gemini")
 
     def is_available(self) -> bool:
-        """Return True if an API key is present in environment or config."""
+        """Return True if an API key is present in credentials."""
         return bool(self._resolve_api_key())
 
     def _get_client(self):
@@ -60,7 +61,9 @@ class GeminiProvider(AIProvider):
                 ) from exc
             key = self._resolve_api_key()
             if not key:
-                raise RuntimeError("No Gemini API key found (set GOOGLE_API_KEY or GEMINI_API_KEY).")
+                raise RuntimeError(
+                    "Gemini API key is not configured. Run: git auth set gemini <your_key>"
+                )
             self._client = genai.Client(api_key=key)
         return self._client
 

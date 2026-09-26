@@ -3,9 +3,9 @@ Provider registry and autodetect factory for commitguard AI layer.
 
 Autodetects an available provider when none is explicitly configured,
 following the priority order:
-  1. Google Gemini  (GOOGLE_API_KEY)
-  2. OpenAI         (OPENAI_API_KEY)
-  3. Anthropic      (ANTHROPIC_API_KEY)
+  1. Google Gemini  (configured in ~/.commitguard/credentials)
+  2. OpenAI         (configured in ~/.commitguard/credentials)
+  3. Anthropic      (configured in ~/.commitguard/credentials)
   4. Ollama         (always available if running locally)
 """
 from __future__ import annotations

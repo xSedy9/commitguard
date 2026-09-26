@@ -10,6 +10,7 @@ import json
 import os
 import re
 
+from src.credentials import get_credential
 from src.providers.base import AIIssue, AIProvider, AIResult
 
 _DEFAULT_MODEL = "claude-haiku-4-5"
@@ -31,14 +32,20 @@ class AnthropicProvider(AIProvider):
         self,
         model: str = _DEFAULT_MODEL,
         timeout: int = 10,
+        api_key: str | None = None,
     ) -> None:
         self.model = model
         self.timeout = timeout
+        self.api_key = api_key
         self._client = None
 
+    def _resolve_api_key(self) -> str | None:
+        """Resolve API key from constructor argument or credentials file."""
+        return self.api_key or get_credential("anthropic")
+
     def is_available(self) -> bool:
-        """Return True if ANTHROPIC_API_KEY is present in the environment."""
-        return bool(os.environ.get("ANTHROPIC_API_KEY"))
+        """Return True if an API key is present in credentials."""
+        return bool(self._resolve_api_key())
 
     def _get_client(self):
         """Lazily initialize and cache the Anthropic client."""
@@ -49,8 +56,13 @@ class AnthropicProvider(AIProvider):
                 raise RuntimeError(
                     "anthropic is not installed. Run: pip install anthropic"
                 ) from exc
+            key = self._resolve_api_key()
+            if not key:
+                raise RuntimeError(
+                    "Anthropic API key is not configured. Run: git auth set anthropic <your_key>"
+                )
             self._client = anthropic.Anthropic(
-                api_key=os.environ["ANTHROPIC_API_KEY"],
+                api_key=key,
                 timeout=float(self.timeout),
             )
         return self._client

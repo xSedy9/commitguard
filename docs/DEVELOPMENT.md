@@ -52,17 +52,18 @@ New LLM providers must implement the `AIProvider` interface defined in `src/prov
 Create `src/providers/<name>.py`:
 ```python
 from __future__ import annotations
-import os
+from src.credentials import get_credential
 from src.providers.base import AIProvider, AIResult
 
 class CustomProvider(AIProvider):
-    def __init__(self, model: str = "default-model", timeout: int = 10) -> None:
+    def __init__(self, model: str = "default-model", timeout: int = 10, api_key: str | None = None) -> None:
         self.model = model
         self.timeout = timeout
+        self.api_key = api_key
 
     def is_available(self) -> bool:
-        """Verify API key is present in environment."""
-        return bool(os.environ.get("CUSTOM_API_KEY"))
+        """Verify API key is present in credentials."""
+        return bool(self.api_key or get_credential("custom"))
 
     def analyze(self, prompt: str) -> AIResult:
         """Invoke API, parse JSON, and return AIResult."""
@@ -76,8 +77,8 @@ Update `src/providers/__init__.py`:
 
 ### Step 3: Add Unit Tests
 Create tests in `tests/test_providers.py` asserting:
-1. `is_available()` returns `False` when the environment variable is missing.
-2. `is_available()` returns `True` when credentials are set.
+1. `is_available()` returns `False` when the credential is not configured.
+2. `is_available()` returns `True` when the credential is set.
 3. Response parsing extracts `AIResult(passed=True)` and `AIResult(passed=False, issues=...)` correctly.
 4. Parsing errors fail open to `AIResult(passed=True)`.
 

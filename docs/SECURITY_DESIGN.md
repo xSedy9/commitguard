@@ -50,7 +50,8 @@ To prevent infinite recursion, `git_guard.py` resolves the true git binary dynam
 
 ## 4. Credential Management
 
-AI provider API keys (`GOOGLE_API_KEY`, `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`) are handled with the following security boundaries:
-1. **Never Staged or Committed**: Credentials must reside in environment variables or an uncommitted `.env` file ignored by `.gitignore`.
-2. **Read-Only In-Memory**: Keys are read dynamically at request time and are never written to disk or included in log outputs.
-3. **Registry Fallback on Windows**: When running in unrefreshed processes, `load_config` inspects `HKCU\Environment` in memory without modifying persistent storage.
+AI provider API keys (Gemini, OpenAI, Anthropic) are handled with the following security boundaries:
+1. **Isolated from Environment Variables**: Credentials are NOT loaded from ambient environment variables, protecting keys from child process inspection, build script execution, or process table listings.
+2. **Dedicated Restricted Storage**: Keys reside in a dedicated user-level credentials file (`~/.commitguard/credentials`) with restricted permissions (POSIX `0600` and Windows user ACL).
+3. **Never Logged or Printed**: The CLI commands (`git auth get`, `git auth list`) output only masked representations of sensitive keys.
+4. **Zero Repository Pollution**: The credentials file is located entirely outside of project repositories, eliminating the possibility of accidentally committing secrets.

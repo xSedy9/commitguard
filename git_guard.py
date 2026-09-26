@@ -212,6 +212,12 @@ def run(argv: list[str]) -> int:
     """
     args = list(argv)
 
+    # Intercept credential management subcommands
+    if args and args[0] in ("auth", "credentials"):
+        from src.credentials import handle_auth_command
+
+        return handle_auth_command(args[1:])
+
     # All non-commit commands pass through immediately.
     if not args or args[0] != "commit":
         return passthrough(args)

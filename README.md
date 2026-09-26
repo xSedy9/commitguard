@@ -68,18 +68,26 @@ source ~/.zshrc   # or ~/.bashrc
 
 ### Set your API key
 
-commitguard auto-detects the first available AI provider:
-
-| Provider | Environment variable | Install |
-|---|---|---|
-| Google Gemini | `GOOGLE_API_KEY` | `pip install google-genai` |
-| OpenAI | `OPENAI_API_KEY` | `pip install openai` |
-| Anthropic Claude | `ANTHROPIC_API_KEY` | `pip install anthropic` |
-| Ollama (local) | *(none — auto-detected)* | [ollama.ai](https://ollama.ai) |
+API keys are stored securely in `~/.commitguard/credentials` with owner-only permissions, isolated from environment variables and child processes:
 
 ```bash
-export GOOGLE_API_KEY="your-key-here"   # example
+# Save an API key (cross-platform)
+git auth set gemini "your-gemini-key"
+git auth set openai "your-openai-key"
+git auth set anthropic "your-anthropic-key"
+
+# View configured credentials (keys are automatically masked)
+git auth list
 ```
+
+commitguard auto-detects the first available AI provider:
+
+| Provider | Setup Command | Install SDK |
+|---|---|---|
+| Google Gemini | `git auth set gemini <key>` | `pip install google-genai` |
+| OpenAI | `git auth set openai <key>` | `pip install openai` |
+| Anthropic Claude | `git auth set anthropic <key>` | `pip install anthropic` |
+| Ollama (local) | *(none — zero credentials needed)* | [ollama.ai](https://ollama.ai) |
 
 ---
 

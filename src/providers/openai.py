@@ -11,6 +11,7 @@ import json
 import os
 import re
 
+from src.credentials import get_credential
 from src.providers.base import AIIssue, AIProvider, AIResult
 
 _DEFAULT_MODEL = "gpt-4o-mini"
@@ -32,14 +33,20 @@ class OpenAIProvider(AIProvider):
         self,
         model: str = _DEFAULT_MODEL,
         timeout: int = 10,
+        api_key: str | None = None,
     ) -> None:
         self.model = model
         self.timeout = timeout
+        self.api_key = api_key
         self._client = None
 
+    def _resolve_api_key(self) -> str | None:
+        """Resolve API key from constructor argument or credentials file."""
+        return self.api_key or get_credential("openai")
+
     def is_available(self) -> bool:
-        """Return True if OPENAI_API_KEY is present in the environment."""
-        return bool(os.environ.get("OPENAI_API_KEY"))
+        """Return True if an API key is present in credentials."""
+        return bool(self._resolve_api_key())
 
     def _get_client(self):
         """Lazily initialize and cache the OpenAI client."""
@@ -50,8 +57,13 @@ class OpenAIProvider(AIProvider):
                 raise RuntimeError(
                     "openai is not installed. Run: pip install openai"
                 ) from exc
+            key = self._resolve_api_key()
+            if not key:
+                raise RuntimeError(
+                    "OpenAI API key is not configured. Run: git auth set openai <your_key>"
+                )
             self._client = openai.OpenAI(
-                api_key=os.environ["OPENAI_API_KEY"],
+                api_key=key,
                 timeout=float(self.timeout),
             )
         return self._client
