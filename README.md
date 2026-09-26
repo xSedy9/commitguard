@@ -100,6 +100,16 @@ ai:
   provider: gemini          # explicit; omit for autodetect
   timeout_seconds: 10
 
+  # Toggle individual semantic checks
+  checks:
+    documentation_emoji: true
+    debug_and_garbage_code: true
+
+  # Project-specific custom rules in natural language
+  custom_rules:
+    - "All public functions must have docstrings"
+    - "No raw SQL queries without parameter binding"
+
 rules:
   blocked_filenames:
     - MY_CUSTOM_AGENT.md
@@ -141,15 +151,15 @@ chore(deps): upgrade numpy to 2.1.0
 
 **Rejection:**
 ```
-[commitguard] Commit rejected — 2 issue(s) found
+[commitguard] Commit rejected -- 2 issue(s) found
 
   [BLOCKED FILES]
-  ✗ GEMINI.md
-    → AI agent instruction file must not be committed
+  [X] GEMINI.md
+    -> AI agent instruction file must not be committed
 
   [AI ANALYSIS]
-  ✗ Debug code detected  (category: debug_code)
-    → Line 47 in auth.py: print("DEBUG token:", token)
+  [X] Debug code detected  (category: debug_code)
+    -> Line 47 in auth.py: print("DEBUG token:", token)
        Remove or replace with proper logging
 
 [commitguard] Fix the issues above and retry.
@@ -157,7 +167,7 @@ chore(deps): upgrade numpy to 2.1.0
 
 **Success:**
 ```
-[commitguard] ✓ All checks passed (heuristics + AI)
+[commitguard] [OK] All checks passed (heuristics + AI)
 ```
 
 ---
@@ -188,6 +198,7 @@ commitguard/
 ├── config.yaml           ← optional user configuration
 ├── src/
 │   ├── config.py         ← config loader
+│   ├── credentials.py    ← secure credential storage & auth CLI
 │   ├── output.py         ← stderr formatter
 │   ├── layer1/           ← heuristic validators
 │   ├── layer2/           ← AI analysis orchestrator
