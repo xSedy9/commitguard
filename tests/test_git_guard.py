@@ -11,6 +11,7 @@ from unittest.mock import MagicMock, patch, call
 import pytest
 
 import git_guard
+from src.config import Config
 from src.providers.base import AIIssue, AIResult
 
 
@@ -215,6 +216,28 @@ class TestAIFlow:
         assert code == 0
         err = capsys.readouterr().err
         assert "provider" in err.lower() or "heuristics" in err.lower()
+
+    def test_ai_disabled_in_config_passes_heuristics_only(self, monkeypatch, capsys):
+        mock_run = _mock_git(staged_files=["src/main.py"], diff="x\n" * 10)
+        monkeypatch.setattr(subprocess, "run", mock_run)
+        with patch("git_guard.load_config") as mock_cfg:
+            cfg = Config()
+            cfg.ai.enabled = False
+            mock_cfg.return_value = cfg
+            code = _run(["commit", "-m", "feat(core): add feature"])
+            assert code == 0
+            err = capsys.readouterr().err
+            assert "AI disabled in config" in err
+
+    def test_fast_path_small_diff_passes(self, monkeypatch, capsys):
+        mock_run = _mock_git(staged_files=["src/main.py"], diff="x\n" * 10)
+        monkeypatch.setattr(subprocess, "run", mock_run)
+        provider = MagicMock()
+        monkeypatch.setattr(git_guard, "get_provider", lambda **kw: provider)
+        code = _run(["commit", "-m", "feat(core): add feature"])
+        assert code == 0
+        err = capsys.readouterr().err
+        assert "fast-path" in err
 
 
 # ---------------------------------------------------------------------------

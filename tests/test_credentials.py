@@ -141,6 +141,36 @@ class TestAuthCLI:
         err = capsys.readouterr().err
         assert "commitguard auth" in err
 
+    def test_auth_no_args_shows_help(self, capsys):
+        ret = handle_auth_command([])
+        assert ret == 0
+        err = capsys.readouterr().err
+        assert "git auth set" in err
+
+    def test_auth_set_missing_args(self, capsys):
+        ret = handle_auth_command(["set", "gemini"])
+        assert ret == 1
+        err = capsys.readouterr().err
+        assert "Usage: git auth set" in err
+
+    def test_auth_get_missing_args(self, capsys):
+        ret = handle_auth_command(["get"])
+        assert ret == 1
+        err = capsys.readouterr().err
+        assert "Usage: git auth get" in err
+
+    def test_auth_remove_missing_args(self, capsys):
+        ret = handle_auth_command(["remove"])
+        assert ret == 1
+        err = capsys.readouterr().err
+        assert "Usage: git auth remove" in err
+
+    def test_auth_unknown_subcommand(self, capsys):
+        ret = handle_auth_command(["foobar"])
+        assert ret == 1
+        err = capsys.readouterr().err
+        assert "Unknown auth command" in err
+
 
 class TestGitGuardAuthRouting:
     def test_git_guard_intercepts_auth(self, temp_creds, capsys):

@@ -93,6 +93,13 @@ class TestBuildPrompt:
         assert "Scope is optional" in prompt
         assert "50 characters" in prompt
 
+    def test_prompt_with_allowed_path_prefixes(self):
+        cfg = Config()
+        cfg.rules.allowed_path_prefixes = ["src/", "tests/"]
+        prompt = build_prompt("feat(core): update", [], "", config=cfg)
+        assert "Allowed path prefixes" in prompt
+        assert "src/, tests/" in prompt
+
 
 # ── should_skip_ai ────────────────────────────────────────────────────────────
 
