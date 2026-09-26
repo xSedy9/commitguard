@@ -31,16 +31,16 @@ RULES — check every one, reject on ANY violation
 {rules}
 
 ═══════════════════════════════════════════════════════
-OUTPUT FORMAT
+OUTPUT FORMAT (EXAMPLES)
 ═══════════════════════════════════════════════════════
 
-If ALL rules pass:
+Example if ALL rules pass:
 {
   "passed": true,
   "issues": []
 }
 
-If ANY rule fails (include one entry per violated rule):
+Example if ANY rule fails (include one entry per violated rule):
 {
   "passed": false,
   "issues": [
