@@ -7,6 +7,7 @@ Install: pip install google-genai
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import warnings
@@ -64,6 +65,8 @@ class GeminiProvider(AIProvider):
                 raise RuntimeError(
                     "Gemini API key is not configured. Run: git auth set gemini <your_key>"
                 )
+            logging.getLogger("google_genai").setLevel(logging.ERROR)
+            logging.getLogger("google").setLevel(logging.ERROR)
             self._client = genai.Client(api_key=key)
         return self._client
 
@@ -80,7 +83,7 @@ class GeminiProvider(AIProvider):
         """
         client = self._get_client()
         with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", message=".*automatic function calling.*")
+            warnings.simplefilter("ignore")
             response = client.models.generate_content(
                 model=self.model,
                 contents=prompt,
