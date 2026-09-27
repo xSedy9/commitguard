@@ -24,6 +24,14 @@ from pathlib import Path
 # regardless of the current working directory.
 sys.path.insert(0, str(Path(__file__).parent))
 
+# Configure standard streams to UTF-8 with safe error handling on all platforms
+for stream in (sys.stdin, sys.stdout, sys.stderr):
+    try:
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from src.config import load_config
 from src.layer1.files import check_staged_files
 from src.layer1.message import validate_message
@@ -88,11 +96,13 @@ REAL_GIT: str = _find_real_git()
 
 
 def _run_git(*args: str) -> subprocess.CompletedProcess:
-    """Run REAL_GIT with the given arguments, capturing output."""
+    """Run REAL_GIT with the given arguments, capturing output in UTF-8."""
     return subprocess.run(
         [REAL_GIT, *args],
         capture_output=True,
         text=True,
+        encoding="utf-8",
+        errors="replace",
     )
 
 

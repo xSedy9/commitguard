@@ -44,6 +44,22 @@ def _mock_git(staged_files: list[str] = None, diff: str = "") -> MagicMock:
 
 
 # ---------------------------------------------------------------------------
+# Git helper execution
+# ---------------------------------------------------------------------------
+
+class TestRunGit:
+    def test_run_git_uses_utf8_encoding(self, monkeypatch):
+        mock_run = MagicMock(return_value=MagicMock(stdout="ok", returncode=0))
+        monkeypatch.setattr(subprocess, "run", mock_run)
+        git_guard._run_git("status")
+        mock_run.assert_called_once()
+        _, kwargs = mock_run.call_args
+        assert kwargs.get("encoding") == "utf-8"
+        assert kwargs.get("errors") == "replace"
+        assert kwargs.get("text") is True
+
+
+# ---------------------------------------------------------------------------
 # Passthrough
 # ---------------------------------------------------------------------------
 

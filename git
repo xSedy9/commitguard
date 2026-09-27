@@ -8,4 +8,4 @@
 # validation for 'git commit' and transparent passthrough for everything else.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 "$SCRIPT_DIR/git_guard.py" "$@"
+exec python3 -X utf8 "$SCRIPT_DIR/git_guard.py" "$@"

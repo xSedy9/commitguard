@@ -6,4 +6,4 @@
 ::
 :: All git commands are forwarded to git_guard.py which handles
 :: validation for 'git commit' and transparent passthrough for everything else.
-python "%~dp0git_guard.py" %*
+python -X utf8 "%~dp0git_guard.py" %*
