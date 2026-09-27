@@ -31,9 +31,14 @@ fi
 # Remove lines containing "# commitguard" and adjacent blank lines
 if command -v gsed &>/dev/null; then
     gsed -i '/# commitguard/d' "$PROFILE"
+elif [ "$(uname)" = "Darwin" ]; then
+    sed -i '' '/# commitguard/d' "$PROFILE"
 else
-    sed -i'' '/# commitguard/d' "$PROFILE"
+    sed -i '/# commitguard/d' "$PROFILE"
 fi
 
 echo "[commitguard] Removed from $PROFILE."
 echo "  Run: source $PROFILE   (or restart your terminal)"
+echo ""
+echo "  Note: API credentials in ~/.commitguard/credentials were preserved."
+echo "        To remove them: rm -rf ~/.commitguard or run 'git auth remove <provider>'."

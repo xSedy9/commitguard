@@ -41,3 +41,6 @@ if ($machinePath -and ($machinePath -split ";" -contains $shimDir)) {
 
 Write-Host "[commitguard] Removed from PATH." -ForegroundColor Green
 Write-Host "  Restart your terminal for changes to take effect." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  Note: API credentials in ~/.commitguard/credentials were preserved." -ForegroundColor Cyan
+Write-Host "        To remove them: delete ~/.commitguard\ or run 'git auth remove <provider>'." -ForegroundColor Cyan

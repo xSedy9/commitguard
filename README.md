@@ -78,6 +78,9 @@ git auth set anthropic "your-anthropic-key"
 
 # View configured credentials (keys are automatically masked)
 git auth list
+
+# Remove a stored key
+git auth remove gemini
 ```
 
 commitguard auto-detects the first available AI provider:
@@ -183,6 +186,8 @@ chore(deps): upgrade numpy to 2.1.0
 # Unix/macOS
 ./uninstall.sh
 ```
+
+> **Note:** Uninstalling removes commitguard from your PATH, but preserves your credentials in `~/.commitguard/credentials`. To delete stored keys, run `git auth remove <provider>` before uninstalling or delete the `~/.commitguard/` directory manually.
 
 ---
 
